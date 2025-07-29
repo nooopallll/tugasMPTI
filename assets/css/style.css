@@ -1616,36 +1616,6 @@ section {
     position: absolute;
     bottom: 0;
 }
-nav#sidebar {
-    height: calc(100%);
-    position: fixed;
-    z-index: 99;
-    left: 0;
-    width: 250px;
-    background: url(../../../assets/img/hotel-cover.jpg);
-    background-repeat: no-repeat;
-    background-size: cover;
-}
-a.nav-item {
-    position: relative;
-    display: block;
-    padding: .75rem 1.25rem;
-    margin-bottom: -1px;
-    border: 1px solid rgba(0,0,0,.125);
-    background-color: #000000c4;
-    color: #989898;
-    font-weight: 600;
-}
-a.nav-item:hover, .nav-item.active {
-    background-color: #000000ad;
-    color: #fffafa;
-}
-main#view-panel{
-  margin-left: 250px; 
-  width:calc(100% - 250px);
-  margin-top: 3.5rem;
-  padding: .5em
-}
 .toast{
   display: none;
   min-width: 20vw
@@ -1690,11 +1660,36 @@ span.stat-icons {
   opacity: 1;       
 }
 .laundry-logo {
-    width: 1em;
-    height: 1.3em;
-    padding: unset;
-    margin: unset;
+  /* Beri ukuran yang jelas untuk container logo */
+  width: 200px;
+  height: 200px;
+  
+  /* Ini wajib agar ::before bisa diposisikan di dalamnya */
+  position: relative; 
+  
+  /* Contoh: untuk menengahkan container di kolom kiri */
+  margin: 40px auto; 
 }
-.laundry-logo::before{
-  content: url(../img/laundry.svg);
+
+.laundry-logo::before {
+  /* Ganti metode ini agar gambar bisa diatur ukurannya */
+  content: ""; /* content dikosongkan tapi harus ada */
+  background-image: url("../img/logoaes.png");
+  
+  /* Atur agar gambar pas di dalam container */
+  background-size: cover; /* atau 'cover' */
+  background-repeat: no-repeat;
+  background-position: center;
+  
+  /* Paksa pseudo-element untuk mengisi seluruh container */
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+#uni_modal .modal-dialog {
+    max-width: 1000px;
+    width: 90%;
 }

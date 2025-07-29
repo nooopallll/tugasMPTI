@@ -1,263 +1,405 @@
 <?php
 include "db_connect.php";
 
-if(isset($_GET['id'])){
-	$qry = $conn->query("SELECT * FROM laundry_list where id =".$_GET['id']);
-	foreach($qry->fetch_array() as $k => $v){
-		$$k = $v;
-	}
+// Inisialisasi variabel untuk menghindari error "undefined variable"
+$customer_name = $customer_phone = $status = $remarks = $pay_status = $amount_tendered = $total_amount = $amount_change = '';
+$cname_arr = [];
+$id = isset($_GET['id']) ? $_GET['id'] : null;
 
+if($id){
+    // Gunakan prepared statements untuk keamanan yang lebih baik
+    $stmt = $conn->prepare("SELECT * FROM laundry_list WHERE id = ?");
+    $stmt->bind_param("i", $id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    if ($result->num_rows > 0) {
+        foreach($result->fetch_assoc() as $k => $v){
+            $$k = $v;
+        }
+    }
+}
+
+// Ambil data kategori terlebih dahulu
+$cat_query = $conn->query("SELECT * FROM laundry_categories ORDER BY name ASC");
+while($row = $cat_query->fetch_assoc()) {
+    $cname_arr[$row['id']] = $row;
 }
 ?>
+<style>
+    .laundry-item-list-mobile { display: none; }
+    .laundry-item-card {
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: .5rem;
+        padding: .75rem;
+        margin-bottom: .5rem;
+    }
+    .item-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-weight: bold;
+        margin-bottom: .5rem;
+    }
+    .item-card-body .detail-row {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.9em;
+        padding: .25rem 0;
+    }
+    .item-card-body .label { color: #6c757d; }
+    .item-card-body .value { font-weight: 500; }
+    .item-card-body input {
+        max-width: 80px; /* Batasi lebar input berat di tampilan kartu */
+    }
+
+    /* Media query untuk beralih antara tabel dan kartu */
+    @media (max-width: 767.98px) {
+        #list-table { display: none; } /* Sembunyikan tabel di mobile */
+        .laundry-item-list-mobile { display: block; } /* Tampilkan daftar kartu di mobile */
+    }
+</style>
 
 <div class="container-fluid">
-	<form action="" id="manage-laundry">
-		<div class="col-lg-12">	
-			<input type="hidden" name="id" value="<?php echo isset($_GET['id']) ? $_GET['id'] : '' ?>">	
-			<div class="row">
-				<div class="col-md-6">	
-					<div class="form-group">	
-						<label for="" class="control-label">Customer Name</label>
-						<input type="text" class="form-control" name="customer_name" value="<?php echo isset($customer_name) ? $customer_name : '' ?>">
-					</div>
-				</div>
-				<?php if(isset($_GET['id'])): ?>
-				<div class="col-md-6">
-					<div class="form-group">
-						<label for="" class="control-label">Status</label>
-						<select name="status" id="" class="custom-select browser-default">
-							<option value="0" <?php echo $status == 0 ? "selected" : '' ?>>Pending</option>
-							<option value="1" <?php echo $status == 1 ? "selected" : '' ?>>Processing</option>
-							<option value="2" <?php echo $status == 2 ? "selected" : '' ?>>Ready to be Claim</option>
-							<option value="3" <?php echo $status == 3 ? "selected" : '' ?>>Claimed</option>
-						</select>
-					</div>
-				</div>
-				<?php endif; ?>
-			</div>
-			<div class="row">
-				<div class="form-group col-md-6">
-					<label class="control-label">Remarks</label>
-					<textarea name="remarks" id="" cols="30" rows="2" class="form-control"><?php echo isset($remarks) ? $remarks : '' ?></textarea>
-				</div>
-			</div>
-			<hr>	
-			<div class="row">	
-				<div class="col-md-4">	
-					<div class="form-group">	
-						<label for="" class="control-label">Laundry Category</label>
-						<select class="custom-select browser-default" id="laundry_category_id">
-							<?php 
-								$cat = $conn->query("SELECT * FROM laundry_categories order by name asc");
-								while($row= $cat->fetch_assoc()):
-									$cname_arr[$row['id']] = $row['name'];
-							?>
-							<option value="<?php echo $row['id'] ?>" data-price="<?php echo $row['price'] ?>"><?php echo $row['name'] ?></option>
-							<?php endwhile; ?>
-						</select>
-					</div>
-				</div>
-				<div class="col-md-4">	
-					<div class="form-group">	
-						<label for="" class="control-label">Weight</label>
-						<input type="number" step="any" min="1" value="1" class="form-control text-right" id="weight">
-					</div>
-				</div>
-				<div class="col-md-4">	
-					<div class="form-group">	
-						<label for="" class="control-label">&nbsp;</label>
-						<button class="btn btn-info btn-sm btn-block" type="button" id="add_to_list"><i class="fa fa-plus"></i> Add to List</button>
-					</div>
-				</div>
-			</div>
-			<div class="row">	
-				<table class="table table-bordered" id="list">
-					<colgroup>	
-						<col width="30%">
-						<col width="15%">
-						<col width="25%">
-						<col width="25%">
-						<col width="5%">
-					</colgroup>	
-					<thead>	
-						<tr>
-							<th class="text-center">Category</th>
-							<th class="text-center">Weight(kg)</th>
-							<th class="text-center">Unit Price</th>
-							<th class="text-center">Amount</th>
-							<th class="text-center"></th>
-						</tr>
-					</thead>
-					<tbody>
-						<?php if(isset($_GET['id'])): ?>
-						<?php 
-							$list = $conn->query("SELECT * from laundry_items where laundry_id = ".$id);
-							while($row=$list->fetch_assoc()):
-						?>
-							<tr data-id="<?php echo $row['id'] ?>">
-								<td class="">
-									<input type="hidden" name="item_id[]" id="" value="<?php echo $row['id'] ?>">
-									<input type="hidden" name="laundry_category_id[]" id="" value="<?php echo $row['laundry_category_id'] ?>"><?php echo isset($cname_arr[$row['laundry_category_id']]) ? ucwords($cname_arr[$row['laundry_category_id']]) : '' ?></td>
-								<td><input type="number" class="text-center" name="weight[]" id="" value="<?php echo $row['weight'] ?>"></td>
-								<td class="text-right"><input type="hidden" name="unit_price[]" id="" value="<?php echo $row['unit_price'] ?>"><?php echo number_format($row['unit_price'],2) ?></td>
-								<td class="text-right"><input type="hidden" name="amount[]" id="" value="<?php echo $row['amount'] ?>"><p><?php echo number_format($row['amount'],2) ?></p></td>
-								<td><button class="btn btn-sm btn-danger" type="button" onclick="rem_list($(this))"><i class="fa fa-times"></i></button></td>
-							</tr>
-						<?php endwhile; ?>
-						<?php endif; ?>
+    <form action="" id="manage-laundry">
+        <input type="hidden" name="id" value="<?php echo isset($id) ? $id : '' ?>">
 
-					</tbody>	
-					<tfoot>
-						<tr>
-							<th class="text-right" colspan="3"></th>
-							<th class="text-right" id="tamount"></th>
-							<th class="text-right"></th>
-						</tr>
-					</tfoot>
-				</table>
-			</div>	
-			<hr>
-			<div class="row">
-				<div class="form-group">
-					<div class="custom-control custom-switch" id="pay-switch">
-					  <input type="checkbox" class="custom-control-input" value="1" name="pay" id="paid" <?php echo isset($pay_status) && $pay_status == 1 ? 'checked' :'' ?>>
-					  <label class="custom-control-label" for="paid">Pay</label>
-					</div>
-				</div>
-			</div>
-			<div class="row" id="payment">
-				<div class="col-md-6">
-					<div class="form-group">	
-						<label for="" class="control-label">Amount Tendered</label>
-						<input type="number" step="any" min="0" value="<?php echo isset($amount_tendered) ? $amount_tendered : 0 ?>" class="form-control text-right" name="tendered">
-					</div>
-				</div>
-				<div class="col-md-6">
-					<div class="form-group">	
-						<label for="" class="control-label">Total Amount</label>
-						<input type="number" step="any" min="1" value="<?php echo isset($total_amount) ? $total_amount : 0 ?>" class="form-control text-right" name="tamount" readonly="">
-					</div>
-				</div>
-				<div class="col-md-6">
-					<div class="form-group">	
-						<label for="" class="control-label">Change</label>
-						<input type="number" step="any" min="1" value="<?php echo isset($amount_change) ? $amount_change : 0 ?>" class="form-control text-right" name="change" readonly="">
-					</div>
-				</div>
-			</div>
-		</div>
-	</form>
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label for="customer_name" class="form-label">Nama Pelanggan</label>
+                <input type="text" id="customer_name" class="form-control" name="customer_name" value="<?php echo htmlspecialchars($customer_name); ?>" required>
+            </div>
+            <div class="col-md-6">
+                <label for="customer_phone" class="form-label">Nomor WhatsApp</label>
+                <input type="text" id="customer_phone" class="form-control" name="customer_phone" value="<?php echo htmlspecialchars($customer_phone); ?>" placeholder="Contoh: 6281234567890">
+                <small class="form-text text-muted">Gunakan format internasional (misal: 62... bukan 0...)</small>
+            </div>
+            <div class="col-md-6">
+                 <label for="remarks" class="form-label">Keterangan</label>
+                 <textarea name="remarks" id="remarks" rows="2" class="form-control"><?php echo htmlspecialchars($remarks); ?></textarea>
+            </div>
+            <?php if(isset($_GET['id'])): ?>
+            <div class="col-md-6">
+                <label for="status" class="form-label">Status</label>
+                <select name="status" id="status" class="form-select">
+                    <option value="0" <?php echo $status == 0 ? "selected" : '' ?>>Pending</option>
+                    <option value="1" <?php echo $status == 1 ? "selected" : '' ?>>Diproses</option>
+                    <option value="2" <?php echo $status == 2 ? "selected" : '' ?>>Siap Diambil</option>
+                    <option value="3" <?php echo $status == 3 ? "selected" : '' ?>>Sudah Diambil</option>
+                </select>
+            </div>
+            <?php endif; ?>
+        </div>
+
+        <hr class="my-4">
+
+        <div class="row g-3 align-items-end">
+            <div class="col-md-5">
+                <label for="laundry_category_id" class="form-label">Kategori Laundry</label>
+                <select class="form-select" id="laundry_category_id">
+                    <option value="" disabled selected>Pilih kategori...</option>
+                    <?php foreach($cname_arr as $cat_id => $cat_data): ?>
+                    <option value="<?php echo $cat_id ?>" data-price="<?php echo $cat_data['price'] ?>"><?php echo htmlspecialchars(ucwords($cat_data['name'])) ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label for="weight" class="form-label">Berat (kg)</label>
+                <input type="number" step="any" min="0.1" value="1" class="form-control text-end" id="weight">
+            </div>
+            <div class="col-md-3">
+                <button class="btn btn-info w-100" type="button" id="add_to_list"><i class="fa fa-plus"></i> Tambah ke Daftar</button>
+            </div>
+        </div>
+
+        <div class="mt-4">
+            <table class="table table-bordered" id="list-table">
+                <thead>
+                    <tr>
+                        <th class="text-center">Kategori</th>
+                        <th class="text-center" style="width:15%;">Berat (kg)</th>
+                        <th class="text-center" style="width:20%;">Harga Satuan</th>
+                        <th class="text-center" style="width:20%;">Jumlah</th>
+                        <th class="text-center" style="width:5%;"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php if(isset($_GET['id'])):
+                        $list = $conn->query("SELECT * FROM laundry_items WHERE laundry_id = ".$id);
+                        while($row = $list->fetch_assoc()):
+                    ?>
+                    <tr data-id="<?php echo $row['laundry_category_id'] ?>">
+                        <td>
+                            <input type="hidden" name="item_id[]" value="<?php echo $row['id'] ?>">
+                            <input type="hidden" name="laundry_category_id[]" value="<?php echo $row['laundry_category_id'] ?>">
+                            <?php echo isset($cname_arr[$row['laundry_category_id']]) ? ucwords($cname_arr[$row['laundry_category_id']]['name']) : 'N/A' ?>
+                        </td>
+                        <td><input type="number" class="form-control form-control-sm text-end" name="weight[]" value="<?php echo $row['weight'] ?>"></td>
+                        <td class="text-end">
+                            <input type="hidden" name="unit_price[]" value="<?php echo $row['unit_price'] ?>">
+                            <?php echo number_format($row['unit_price'], 2, ',', '.') ?>
+                        </td>
+                        <td class="text-end">
+                            <input type="hidden" name="amount[]" value="<?php echo $row['amount'] ?>">
+                            <p class="mb-0"><?php echo number_format($row['amount'], 2, ',', '.') ?></p>
+                        </td>
+                        <td class="text-center"><button class="btn btn-sm btn-danger" type="button" onclick="rem_item($(this))"><i class="fa fa-times"></i></button></td>
+                    </tr>
+                    <?php endwhile; endif; ?>
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <th class="text-end" colspan="3">Total</th>
+                        <th class="text-end" id="tamount">0,00</th>
+                        <th></th>
+                    </tr>
+                </tfoot>
+            </table>
+
+            <div class="laundry-item-list-mobile">
+                </div>
+        </div>
+
+        <hr class="my-4">
+
+        <div class="row g-3">
+            <div class="col-12">
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="paid" name="pay" value="1" <?php echo $pay_status == 1 ? 'checked' : '' ?>>
+                    <label class="form-check-label" for="paid">Tandai Sudah Lunas</label>
+                </div>
+            </div>
+        </div>
+        <div class="row g-3 mt-2" id="payment-details" style="display:none;">
+            <div class="col-md-4">
+                <label for="tamount-input" class="form-label">Total Tagihan</label>
+                <input type="number" id="tamount-input" class="form-control text-end" name="tamount" value="<?php echo $total_amount; ?>" readonly>
+            </div>
+            <div class="col-md-4">
+                <label for="tendered" class="form-label">Uang Tunai</label>
+                <input type="number" id="tendered" class="form-control text-end" name="tendered" value="<?php echo $amount_tendered; ?>">
+            </div>
+            <div class="col-md-4">
+                <label for="change" class="form-label">Kembalian</label>
+                <input type="number" id="change" class="form-control text-end" name="change" value="<?php echo $amount_change; ?>" readonly>
+            </div>
+        </div>
+    </form>
 </div>
+
 <script>
-	if('<?php echo isset($_GET['id']) ?>' == 1){
-			calc()
-		}
-	if($('[name="pay"]').prop('checked') == true){
-			$('[name="tendered"]').attr('required',true)
-			$('#payment').show();
-		}else{
-			$('#payment').hide();
-			$('[name="tendered"]').attr('required',false)
-		}	
-	$('#pay-switch').click(function(){
-		if($('[name="pay"]').prop('checked') == true){
-			$('[name="tendered"]').attr('required',true)
-			$('#payment').show('slideDown');
-		}else{
-			$('#payment').hide('SlideUp');
-			$('[name="tendered"]').attr('required',false)
-		}	
-	})
-	$('[name="tendered"],[name="tamount"]').on('keypup keydown keypress change input',function(){
-		var tend = $('[name="tendered"]').val();
-		var amount = $('[name="tamount"]').val();
-		var change = parseFloat(tend) - parseFloat(amount)
-		change = parseFloat(change).toLocaleString('en-US',{style:'decimal',maximumFractionDigits:2,minimumFractionDigits:2})
-		$('[name="change"]').val(change)
-	})
-	$('#add_to_list').click(function(){
-		var cat = $('#laundry_category_id').val(),
-			_weight = $('#weight').val();
-		if(cat == '' || _weight ==''){
-			alert_toast('Fill the category and weight fields first.','warning')
-			return false;
-		}
-		if($('#list tr[data-id="'+cat+'"]').length > 0){
-			alert_toast('Category already exist.','warning')
-			return false;
-		}
-		var price = $('#laundry_category_id option[value="'+cat+'"]').attr('data-price');
-		var cname = $('#laundry_category_id option[value="'+cat+'"]').html();
-		var amount = parseFloat(price) * parseFloat(_weight);
-		var tr = $('<tr></tr>');
-		tr.attr('data-id',cat)
-		tr.append('<input type="hidden" name="item_id[]" id="" value=""><td class=""><input type="hidden" name="laundry_category_id[]" id="" value="'+cat+'">'+cname+'</td>')
-		tr.append('<td><input type="number" class="text-center" name="weight[]" id="" value="'+_weight+'"></td>')
-		tr.append('<td class="text-right"><input type="hidden" name="unit_price[]" id="" value="'+price+'">'+(parseFloat(price).toLocaleString('en-US',{style:'decimal',maximumFractionDigits:2,minimumFractionDigits:2}))+'</td>')
-		tr.append('<td class="text-right"><input type="hidden" name="amount[]" id="" value="'+amount+'"><p>'+(parseFloat(amount).toLocaleString('en-US',{style:'decimal',maximumFractionDigits:2,minimumFractionDigits:2}))+'</p></td>')
-		tr.append('<td><button class="btn btn-sm btn-danger" type="button" onclick="rem_list($(this))"><i class="fa fa-times"></i></button></td>')
-		$('#list tbody').append(tr)
-		calc()
-		$('[name="weight[]"]').on('keyup keydown keypress change',function(){
-			calc();
-		})
-			$('[name="tendered"]').trigger('keypress')
-		
-		$('#laundry_category_id').val('')
-		$('#weight').val('')
-	})
-	function rem_list(_this){
-		_this.closest('tr').remove()
-		calc()
-			$('[name="tendered"]').trigger('keypress')
+// === Manajemen Daftar Item ===
+function addItemToList(cat_id, weight) {
+    if ($('#list-table tbody tr[data-id="' + cat_id + '"]').length > 0) {
+        alert_toast('Kategori sudah ada di dalam daftar.', 'warning');
+        return false;
+    }
 
+    const catOption = $('#laundry_category_id option[value="' + cat_id + '"]');
+    const price = parseFloat(catOption.data('price'));
+    const cname = catOption.html();
+    const amount = price * parseFloat(weight);
 
-	}
-	function calc(){
-		var total = 0;
-		$('#list tbody tr').each(function(){
-			var _this = $(this)
-			var weight = _this.find('[name="weight[]"]').val()
-			var unit_price = _this.find('[name="unit_price[]"]').val()
-			var amount = parseFloat(weight) * parseFloat(unit_price)
-			_this.find('[name="amount[]"]').val(amount)
-			_this.find('[name="amount[]"]').siblings('p').html(parseFloat(amount).toLocaleString('en-US',{style:'decimal',maximumFractionDigits:2,minimumFractionDigits:2}))
-			total+= amount;
+    // 1. Tambah ke Tabel (untuk desktop)
+    const tr = `
+        <tr data-id="${cat_id}">
+            <td>
+                <input type="hidden" name="item_id[]" value="">
+                <input type="hidden" name="laundry_category_id[]" value="${cat_id}">
+                ${cname}
+            </td>
+            <td><input type="number" class="form-control form-control-sm text-end" name="weight[]" value="${weight}"></td>
+            <td class="text-end">
+                <input type="hidden" name="unit_price[]" value="${price}">
+                ${price.toLocaleString('id-ID', {minimumFractionDigits: 0})}
+            </td>
+            <td class="text-end">
+                <input type="hidden" name="amount[]" value="${amount}">
+                <p class="mb-0">${amount.toLocaleString('id-ID', {minimumFractionDigits: 0})}</p>
+            </td>
+            <td class="text-center"><button class="btn btn-sm btn-danger" type="button" onclick="rem_item($(this))"><i class="fa fa-times"></i></button></td>
+        </tr>`;
+    $('#list-table tbody').append(tr);
+    
+    // 2. Tambah ke Daftar Kartu (untuk mobile)
+    const card = `
+        <div class="laundry-item-card" data-id="${cat_id}">
+            <div class="item-card-header">
+                <span>${cname}</span>
+                <button class="btn btn-sm btn-danger" type="button" onclick="rem_item($(this))"><i class="fa fa-times"></i></button>
+            </div>
+            <div class="item-card-body">
+                <div class="detail-row">
+                    <span class="label">Berat (kg):</span>
+                    <input type="number" class="form-control form-control-sm text-end" value="${weight}">
+                </div>
+                <div class="detail-row">
+                    <span class="label">Harga:</span>
+                    <span class="value">${price.toLocaleString('id-ID')} / kg</span>
+                </div>
+                 <div class="detail-row">
+                    <span class="label">Subtotal:</span>
+                    <span class="value fw-bold">${amount.toLocaleString('id-ID', {minimumFractionDigits: 0})}</span>
+                </div>
+            </div>
+        </div>`;
+    $('.laundry-item-list-mobile').append(card);
 
-		})
-			$('[name="tamount"]').val(total)
-			$('#tamount').html(parseFloat(total).toLocaleString('en-US',{style:'decimal',maximumFractionDigits:2,minimumFractionDigits:2}))
+    updateCalculations();
+}
 
+function rem_item(_this) {
+    const item = _this.closest('[data-id]');
+    const cat_id = item.data('id');
+    $('[data-id="' + cat_id + '"]').remove();
+    updateCalculations();
+}
 
-	}
-	$('#manage-laundry').submit(function(e){
-		e.preventDefault()
-		start_load()
-		$.ajax({
-			url:'ajax.php?action=save_laundry',
-			data: new FormData($(this)[0]),
-		    cache: false,
-		    contentType: false,
-		    processData: false,
-		    method: 'POST',
-		    type: 'POST',
-			success:function(resp){
-				if(resp==1){
-					alert_toast("Data successfully added",'success')
-					setTimeout(function(){
-						location.reload()
-					},1500)
+// === Logika Kalkulasi ===
+function updateCalculations() {
+    let total = 0;
+    $('#list-table tbody tr').each(function() {
+        const row = $(this);
+        const weight = parseFloat(row.find('[name="weight[]"]').val()) || 0;
+        const unit_price = parseFloat(row.find('[name="unit_price[]"]').val()) || 0;
+        const amount = weight * unit_price;
 
-				}
-				else if(resp==2){
-					alert_toast("Data successfully updated",'success')
-					setTimeout(function(){
-						location.reload()
-					},1500)
+        row.find('[name="amount[]"]').val(amount);
+        row.find('p').html(amount.toLocaleString('id-ID', {minimumFractionDigits: 0}));
+        
+        // Sinkronisasi tampilan kartu mobile
+        const mobileCard = $('.laundry-item-card[data-id="' + row.data('id') + '"]');
+        mobileCard.find('.value.fw-bold').html(amount.toLocaleString('id-ID', {minimumFractionDigits: 0}));
 
-				}
-			}
-		})
-	})
+        total += amount;
+    });
 
-</script>	
+    $('#tamount').html(total.toLocaleString('id-ID', {minimumFractionDigits: 0}));
+    $('[name="tamount"]').val(total);
+    
+    // Picu kalkulasi kembalian
+    $('[name="tendered"]').trigger('input');
+}
+
+// === Event Handlers ===
+$(document).ready(function() {
+    // Kalkulasi awal untuk mode edit
+    if ('<?php echo isset($_GET['id']) ?>') {
+        $('#list-table tbody tr').each(function() {
+            const row = $(this);
+            const cat_id = row.data('id');
+            const cat_name = row.find('td:first-child').text().trim();
+            const weight = row.find('[name="weight[]"]').val();
+            const price = row.find('[name="unit_price[]"]').val();
+            const amount = row.find('[name="amount[]"]').val();
+            
+            // Buat ulang tampilan kartu mobile dari data tabel yang sudah ada
+            const card = `
+                <div class="laundry-item-card" data-id="${cat_id}">
+                    <div class="item-card-header">
+                        <span>${cat_name}</span>
+                        <button class="btn btn-sm btn-danger" type="button" onclick="rem_item($(this))"><i class="fa fa-times"></i></button>
+                    </div>
+                    <div class="item-card-body">
+                         <div class="detail-row">
+                            <span class="label">Berat (kg):</span>
+                            <input type="number" class="form-control form-control-sm text-end" value="${weight}">
+                        </div>
+                        <div class="detail-row">
+                            <span class="label">Harga:</span>
+                            <span class="value">${parseFloat(price).toLocaleString('id-ID')} / kg</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="label">Subtotal:</span>
+                            <span class="value fw-bold">${parseFloat(amount).toLocaleString('id-ID', {minimumFractionDigits: 0})}</span>
+                        </div>
+                    </div>
+                </div>`;
+            $('.laundry-item-list-mobile').append(card);
+        });
+        updateCalculations();
+    }
+    
+    // Tombol tambah item
+    $('#add_to_list').click(function() {
+        const cat_id = $('#laundry_category_id').val();
+        const weight = $('#weight').val();
+        if (!cat_id || !weight || parseFloat(weight) <= 0) {
+            alert_toast('Silakan pilih kategori dan masukkan berat yang valid.', 'warning');
+            return;
+        }
+        addItemToList(cat_id, weight);
+        $('#laundry_category_id').val('');
+        $('#weight').val('1');
+    });
+
+    // Kalkulasi dinamis saat berat diubah (untuk tabel dan kartu)
+    $(document).on('input', '#list-table [name="weight[]"], .laundry-item-card input', function() {
+        const changedInput = $(this);
+        const newValue = changedInput.val();
+        const cat_id = changedInput.closest('[data-id]').data('id');
+        
+        // Sinkronisasi nilai antara dua tampilan
+        const tableRowInput = $('#list-table tr[data-id="'+ cat_id +'"]').find('[name="weight[]"]');
+        const cardInput = $('.laundry-item-card[data-id="'+ cat_id +'"]').find('input');
+
+        if (!changedInput.is(tableRowInput)) tableRowInput.val(newValue);
+        if (!changedInput.is(cardInput)) cardInput.val(newValue);
+        
+        updateCalculations();
+    });
+
+    // Logika tombol Lunas
+    function togglePayment(isPaid) {
+        if (isPaid) {
+            $('#payment-details').slideDown();
+            $('#tendered').prop('required', true);
+        } else {
+            $('#payment-details').slideUp();
+            $('#tendered').prop('required', false);
+        }
+    }
+    togglePayment($('#paid').is(':checked'));
+    $('#paid').change(function() {
+        togglePayment($(this).is(':checked'));
+    });
+
+    // Kalkulasi kembalian
+    $('#tendered, #tamount-input').on('input', function() {
+        const tendered = parseFloat($('#tendered').val()) || 0;
+        const total = parseFloat($('#tamount-input').val()) || 0;
+        const change = tendered - total;
+        $('#change').val(change.toFixed(0));
+    });
+
+    // Pengiriman form
+    $('#manage-laundry').submit(function(e) {
+        e.preventDefault();
+        if ($('#list-table tbody tr').length <= 0) {
+            alert_toast("Silakan tambahkan minimal satu item laundry.", "warning");
+            return false;
+        }
+        start_load();
+        $.ajax({
+            url: 'ajax.php?action=save_laundry',
+            data: new FormData($(this)[0]),
+            cache: false,
+            contentType: false,
+            processData: false,
+            method: 'POST',
+            success: function(resp) {
+                if (resp == 1) {
+                    alert_toast("Data berhasil ditambahkan", 'success');
+                } else if (resp == 2) {
+                    alert_toast("Data berhasil diperbarui", 'success');
+                } else {
+                    alert_toast("Terjadi sebuah kesalahan.", 'error');
+                }
+                setTimeout(function() {
+                    location.href = 'index.php?page=laundry';
+                }, 1500);
+            }
+        });
+    });
+});
+</script>

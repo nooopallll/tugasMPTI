@@ -19,7 +19,7 @@
   <link href="assets/vendor/bootstrap-datepicker/css/bootstrap-datepicker.min.css" rel="stylesheet">
   <link href="assets/DataTables/datatables.min.css" rel="stylesheet">
   <link href="assets/css/select2.min.css" rel="stylesheet">
-
+<link rel="icon" type="image/png" href="assets/img/logoaes.png?v=2">
 
   <!-- Template Main CSS File -->
   <link href="assets/css/style.css" rel="stylesheet">
