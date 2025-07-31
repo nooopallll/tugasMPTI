@@ -1,6 +1,5 @@
 <?php include('db_connect.php'); ?>
 
-<!-- [DIHAPUS] Tag <head> yang tidak valid dihapus. Style sebaiknya ada di file CSS utama. -->
 <style>
     .card {
         border: none;
@@ -16,6 +15,12 @@
     .table thead th {
         background-color: #f8f9fc;
     }
+    
+    /* [BARU] Tambahkan style ini untuk memposisikan pagination di tengah */
+    .dataTables_wrapper .dataTables_paginate {
+        justify-content: center !important;
+        padding-top: 1em; /* Memberi sedikit jarak dari tabel */
+    }
 </style>
 
 <div class="container-fluid">
@@ -26,9 +31,7 @@
         </div>
     </div>
     
-    <!-- [DIUBAH] Menggunakan gy-4 untuk memberi jarak vertikal saat kolom bertumpuk di mobile -->
     <div class="row gy-4">
-        <!-- Kolom Form -->
         <div class="col-lg-4">
             <form action="" id="manage-supply">
                 <div class="card h-100">
@@ -53,7 +56,6 @@
             </form>
         </div>
         
-        <!-- Kolom Tabel -->
         <div class="col-lg-8">
             <div class="card h-100">
                 <div class="card-header table-header">
@@ -61,11 +63,9 @@
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
-                        <!-- [DIUBAH] Menambahkan ID untuk inisialisasi DataTables -->
                         <table class="table table-hover" id="supply-list-table" style="width:100%">
                             <thead>
                                 <tr>
-                                    <!-- [BARU] Atribut data-priority untuk DataTables Responsive -->
                                     <th data-priority="3" class="text-center">#</th>
                                     <th data-priority="1">Nama Stok</th>
                                     <th data-priority="1" class="text-center">Aksi</th>
@@ -82,7 +82,6 @@
                                     <td><b><?php echo ucwords($row['name']) ?></b></td>
                                     <td class="text-center">
                                         <div class="btn-group" role="group">
-                                            <!-- [DIUBAH] Tombol aksi menjadi ikon saja -->
                                             <button class="btn btn-sm btn-outline-primary edit_supply" type="button" data-id="<?php echo $row['id'] ?>" data-name="<?php echo htmlspecialchars($row['name']) ?>" title="Edit">
                                                 <i class="fas fa-edit"></i>
                                             </button>
@@ -104,9 +103,15 @@
 
 <script>
 $(document).ready(function() {
-    // [BARU] Inisialisasi DataTable dengan opsi responsive
+    // Inisialisasi DataTable dengan opsi baru
     var table = $('#supply-list-table').DataTable({
-        responsive: true
+        responsive: true,
+        language: {
+            paginate: {
+                previous: '<span aria-hidden="true">&laquo;</span>', // Simbol untuk "Previous"
+                next:     '<span aria-hidden="true">&raquo;</span>'  // Simbol untuk "Next"
+            }
+        }
     });
 
     // Fungsi untuk mereset form
@@ -143,13 +148,11 @@ $(document).ready(function() {
         });
     });
 
-    // [DIUBAH] Menggunakan event delegation untuk tombol yang dinamis
     $('#supply-list-table tbody').on('click', '.edit_supply', function() {
         var form = $('#manage-supply');
         form.find("[name='id']").val($(this).data('id'));
         form.find("[name='name']").val($(this).data('name'));
         $('#form-title').text('Form Edit Stok');
-        // Scroll ke atas agar form terlihat
         $('html, body').animate({ scrollTop: 0 }, 'fast');
     });
 

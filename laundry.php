@@ -1,5 +1,13 @@
 <?php include 'db_connect.php'; ?>
 
+<style>
+    /* Mengatur agar pagination DataTables berada di tengah */
+    .dataTables_wrapper .dataTables_paginate {
+        justify-content: center !important;
+        padding-top: 1em; /* Memberi sedikit jarak dari tabel */
+    }
+</style>
+
 <div class="container-fluid">
     <div class="row mb-4">
         <div class="col-lg-12">
@@ -39,7 +47,6 @@
                                             <td><?php echo ucwords($row['customer_name']) ?></td>
                                             <td class="text-center">
                                                 <?php
-                                                // [DIUBAH] Menggunakan kelas badge Bootstrap 5 (bg-*)
                                                 switch ($row['status']) {
                                                     case 0:
                                                         echo '<span class="badge bg-secondary">Pending</span>';
@@ -70,10 +77,10 @@
                                                 </div>
                                             </td>
                                         </tr>
-                                <?php
+                                    <?php
                                     endwhile;
                                 else :
-                                ?>
+                                    ?>
                                     <tr>
                                         <td colspan="5" class="text-center">Belum ada data laundry. Silakan tambahkan data baru.</td>
                                     </tr>
@@ -89,9 +96,15 @@
 
 <script>
 $(document).ready(function() {
-    // [DIUBAH] Inisialisasi DataTable dengan opsi responsive
+    // Inisialisasi DataTable dengan opsi baru
     $('#laundry-list').dataTable({
-        responsive: true // Cukup tambahkan baris ini!
+        responsive: true,
+        language: {
+            paginate: {
+                previous: '<span aria-hidden="true">&laquo;</span>', // Simbol untuk "Previous"
+                next:     '<span aria-hidden="true">&raquo;</span>'  // Simbol untuk "Next"
+            }
+        }
     });
 
     // Event handlers (tidak ada perubahan di sini)

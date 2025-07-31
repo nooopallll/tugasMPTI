@@ -16,6 +16,12 @@
     .table thead th {
         background-color: #f8f9fc;
     }
+    
+    /* [BARU] Tambahkan style ini untuk memposisikan pagination di tengah */
+    .dataTables_wrapper .dataTables_paginate {
+        justify-content: center !important;
+        padding-top: 1em; /* Memberi sedikit jarak dari tabel */
+    }
 </style>
 
 <div class="container-fluid">
@@ -107,7 +113,7 @@
 
 <script>
 $(document).ready(function() {
-    // [BARU] Inisialisasi DataTable dengan opsi responsive
+    // Inisialisasi DataTable dengan opsi yang disesuaikan
     $('#category-list-table').DataTable({
         responsive: true,
         "order": [],
@@ -116,7 +122,11 @@ $(document).ready(function() {
             "lengthMenu": "Tampilkan _MENU_ data",
             "info": "Menampilkan _START_ sampai _END_ dari _TOTAL_ data",
             "zeroRecords": "Tidak ada data yang cocok",
-            "paginate": { "next": "Berikutnya", "previous": "Sebelumnya" }
+            // [DIUBAH] Mengganti teks pagination menjadi simbol
+            "paginate": {
+                "next": '<span aria-hidden="true">&raquo;</span>',
+                "previous": '<span aria-hidden="true">&laquo;</span>'
+            }
         }
     });
 
@@ -151,7 +161,7 @@ $(document).ready(function() {
         });
     });
 
-    // [DIUBAH] Menggunakan event delegation untuk tombol yang dinamis di dalam tabel
+    // Event delegation untuk tombol dinamis
     $('#category-list-table tbody').on('click', '.edit_cat', function() {
         var cat = $('#manage-category');
         cat.find("[name='id']").val($(this).data('id'));
@@ -166,7 +176,6 @@ $(document).ready(function() {
     });
 });
 
-// Fungsi hapus (tidak ada perubahan)
 function delete_cat($id) {
     start_load();
     $.ajax({

@@ -49,7 +49,7 @@
             background: white;
             padding: 15px;
             box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-            transition: all 0.3s ease-in-out; /* Animasi halus */
+            transition: all 0.3s ease-in-out;
         }
 
         .logo h1 {
@@ -57,7 +57,7 @@
             font-weight: 700;
             margin-top: 15px;
             text-shadow: 1px 1px 3px rgba(0,0,0,0.2);
-            transition: all 0.3s ease-in-out; /* Animasi halus */
+            transition: all 0.3s ease-in-out;
         }
 
         /* === Bagian Form Login === */
@@ -67,7 +67,7 @@
             justify-content: center;
             background: white;
             padding: 40px 20px;
-            flex: 1; /* Ambil sisa ruang vertikal di mobile */
+            flex: 1;
         }
 
         #login-right .card {
@@ -85,56 +85,48 @@
             font-weight: 600; transition: background-color 0.2s;
         }
         .btn-primary:hover { background-color: #0b5ed7; }
-
-        /* =================================
-           PERBAIKAN UNTUK MOBILE & DESKTOP
-           ================================= */
+        
+        /* === [BARU] Tombol Lupa Password === */
+        .forgot-password-link {
+            font-size: 0.9rem;
+            color: #6c757d;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        .forgot-password-link:hover {
+            color: #0d6efd;
+            text-decoration: underline;
+        }
 
         /* === Tampilan Desktop (Layar 768px ke atas) === */
         @media (min-width: 768px) {
-            main#main {
-                flex-direction: row; /* Tampilan berdampingan di desktop */
-            }
-
-            #login-left {
-                flex-basis: 55%; /* Lebar 55% di desktop */
-            }
-
-            #login-right {
-                flex-basis: 45%; /* Lebar 45% di desktop */
-                flex-grow: 0; /* Jangan memanjang lebih dari basisnya */
-            }
+            main#main { flex-direction: row; }
+            #login-left { flex-basis: 55%; }
+            #login-right { flex-basis: 45%; flex-grow: 0; }
         }
 
-        /* === [INI PERBAIKANNYA] Tampilan Mobile (Layar di bawah 768px) === */
+        /* === Tampilan Mobile (Layar di bawah 768px) === */
         @media (max-width: 767.98px) {
-    #login-left {
-        /* Perkecil area biru di atas */
-        flex-basis: 200px;
-        flex-grow: 0;
-        padding: 20px;
-    }
-
-    .logo img {
-        /* Perkecil logo di mobile */
-        width: 80px;
-        height: 80px;
-        padding: 10px;
-    }
-
-    .logo h1 {
-        /* Perkecil teks logo di mobile */
-        font-size: 1.5rem;
-        margin-top: 10px;
-    }
-    
-    #login-right {
-        flex: 1;
-        /* [DIUBAH] Posisikan form sedikit lebih ke atas */
-        align-items: flex-start; /* Alih-alih 'center', ratakan ke atas */
-        padding-top: 3rem;      /* Beri jarak dari area biru */
-    }
-}
+            #login-left {
+                flex-basis: 200px;
+                flex-grow: 0;
+                padding: 20px;
+            }
+            .logo img {
+                width: 80px;
+                height: 80px;
+                padding: 10px;
+            }
+            .logo h1 {
+                font-size: 1.5rem;
+                margin-top: 10px;
+            }
+            #login-right {
+                flex: 1;
+                align-items: flex-start;
+                padding-top: 3rem;
+            }
+        }
     </style>
 </head>
 
@@ -148,25 +140,30 @@
         </div>
 
         <div id="login-right">
-            <div class="card shadow-lg">
-                <div class="card-body">
-                    <h4 class="card-title text-center mb-4">Login</h4>
-                    <form id="login-form">
-                        <div class="form-group">
-                            <label for="username" class="form-label">Username</label>
-                            <input type="text" id="username" name="username" class="form-control" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="password" class="form-label">Password</label>
-                            <input type="password" id="password" name="password" class="form-control" required>
-                        </div>
-                        <div class="d-grid">
-                            <button type="submit" class="btn btn-primary">Login</button>
-                        </div>
-                    </form>
+    <div class="card shadow-lg">
+        <div class="card-body">
+            <h4 class="card-title text-center mb-4">Login</h4>
+            <form id="login-form">
+                <div class="form-group mb-3">
+                    <label for="username" class="form-label">Username</label>
+                    <input type="text" id="username" name="username" class="form-control" required>
                 </div>
-            </div>
+                <div class="form-group mb-3">
+                    <label for="password" class="form-label">Password</label>
+                    <input type="password" id="password" name="password" class="form-control" required>
+                </div>
+
+                <div class="text-start mb-4">
+                    <a href="lupa_password.php" class="forgot-password-link">Lupa Password?</a>
+                </div>
+
+                <div class="d-grid">
+                    <button type="submit" class="btn btn-primary">Login</button>
+                </div>
+            </form>
         </div>
+    </div>
+</div>
     </main>
 
     <script>

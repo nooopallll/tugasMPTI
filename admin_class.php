@@ -258,6 +258,9 @@ function login(){
         // Ekstrak semua variabel dari POST
         extract($_POST);
 
+        $status = isset($status) ? $status : 0;
+        $tendered = isset($tendered) ? $tendered : 0; 
+         $change = isset($change) ? $change : 0; 
         // Ambil status lama SEBELUM update (jika ini adalah proses edit)
         $old_status = null;
         if(isset($id) && !empty($id)){
@@ -279,7 +282,7 @@ function login(){
 
             $stmt = $this->db->prepare("INSERT INTO laundry_list (customer_name, customer_phone, remarks, total_amount, amount_tendered, amount_change, pay_status, `queue`) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
             $pay_status = isset($pay) ? 1 : 0;
-            $stmt->bind_param("sssdddis", $customer_name, $customer_phone, $remarks, $tamount, $tendered, $change, $pay_status, $queue);
+            $stmt->bind_param("sssdddii", $customer_name, $customer_phone, $remarks, $tamount, $tendered, $change, $pay_status, $queue);
             
             $save = $stmt->execute();
             if($save){
@@ -415,6 +418,85 @@ function login(){
         
         return $response;
     }
+
+    function reset_password() {
+    // 1. Ambil data dari form secara aman
+    $username = $_POST['username'];
+    $new_password = $_POST['new_password'];
+
+    // 2. Cari user berdasarkan username menggunakan prepared statement
+    $stmt_find = $this->db->prepare("SELECT id, type FROM users WHERE username = ?");
+    $stmt_find->bind_param("s", $username);
+    $stmt_find->execute();
+    $result = $stmt_find->get_result();
+
+    // 3. Cek apakah user ditemukan
+    if ($result->num_rows > 0) {
+        // User ditemukan, lanjutkan proses update password
+        $user_data = $result->fetch_assoc();
+            
+            // Asumsi: tipe admin adalah 1. Sesuaikan jika berbeda.
+            if($user_data['type'] != 1) {
+                // Jika user BUKAN admin, kembalikan kode error 3
+                echo 3; 
+                return;
+            }
+        // 4. HASH PASSWORD BARU (Sangat Penting untuk Keamanan)
+        // Password tidak disimpan sebagai teks biasa, tapi di-hash.
+        $hashed_password = password_hash($new_password, PASSWORD_DEFAULT);
+
+        // 5. Update password di database menggunakan prepared statement
+        $stmt_update = $this->db->prepare("UPDATE users SET password = ? WHERE username = ?");
+        $stmt_update->bind_param("ss", $hashed_password, $username);
+        
+        if ($stmt_update->execute()) {
+            return 1; // Sukses
+        } else {
+            return "Gagal mengupdate password: " . $stmt_update->error; // Gagal
+        }
+
+    } else {
+        // Jika username tidak ditemukan
+        return 2; 
+    }
+}
+
+function save_attendance_settings(){
+    extract($_POST);
+    
+    // Gunakan prepared statement untuk keamanan
+    $stmt = $this->db->prepare("UPDATE system_settings SET office_latitude = ?, office_longitude = ?, attendance_radius = ? WHERE id = 1");
+    if($stmt === false) { return "Prepare failed: " . $this->db->error; }
+
+    $stmt->bind_param("ssi", $office_latitude, $office_longitude, $attendance_radius);
+    
+    if($stmt->execute()){
+        return 1; // Sukses
+    } else {
+        return "Execute failed: " . $stmt->error; // Gagal
+    }
+}
+
+function delete_user(){
+    // Mengambil ID dari POST request dengan aman
+    $id = $_POST['id'];
+
+    // Menggunakan prepared statement untuk mencegah SQL Injection
+    $stmt = $this->db->prepare("DELETE FROM users WHERE id = ?");
+    if ($stmt === false) {
+        return "Gagal menyiapkan query: " . $this->db->error;
+    }
+
+    // Bind parameter ID sebagai integer
+    $stmt->bind_param("i", $id);
+
+    // Eksekusi query
+    if($stmt->execute()){
+        return 1; // Kirim sinyal sukses
+    } else {
+        return "Gagal menghapus data: " . $stmt->error; // Kirim pesan error jika gagal
+    }
+}
 
 }
 

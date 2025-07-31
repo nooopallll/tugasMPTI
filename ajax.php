@@ -34,6 +34,11 @@ if($action == 'delete_user'){
 	if($save)
 		echo $save;
 }
+if($action == 'reset_password'){
+	$save = $crud->reset_password();
+	if($save)
+		echo $save;
+}
 if($action == 'signup'){
 	$save = $crud->signup();
 	if($save)
@@ -84,7 +89,11 @@ if($action == "delete_inv"){
 	if($save)
 		echo $save;
 }
-
+if($action == "save_attendance_settings"){
+	$save = $crud->save_attendance_settings();
+	if($save)
+		echo $save;
+}
 
 
 

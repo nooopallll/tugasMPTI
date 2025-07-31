@@ -1,10 +1,9 @@
 <?php include 'db_connect.php'; ?>
 
-<!-- [DIHAPUS] Tag <head> dan <style> dipindahkan ke file layout utama. -->
 <style>
-    /* [BARU] Tambahkan style ini ke file CSS utama Anda */
+    /* Style yang sudah ada */
     .low-stock {
-        color: #dc3545; /* Merah */
+        color: #dc3545;
         font-weight: 600;
         background-color: rgba(220, 53, 69, 0.1);
     }
@@ -17,13 +16,17 @@
         justify-content: space-between;
         align-items: center;
     }
-
     .card {
         border: none;
         border-radius: 0.75rem;
         box-shadow: 0 4px 15px rgba(0,0,0,0.05);
     }
     
+    /* [BARU] Tambahkan style ini untuk memposisikan pagination di tengah */
+    .dataTables_wrapper .dataTables_paginate {
+        justify-content: center !important;
+        padding-top: 1em; /* Memberi sedikit jarak dari tabel */
+    }
 </style>
 
 <div class="container-fluid">
@@ -35,7 +38,6 @@
     </div>
 
     <div class="row">
-        <!-- Kolom Ringkasan Stok -->
         <div class="col-lg-5 mb-4">
             <div class="card h-100">
                 <div class="card-header page-header">
@@ -53,13 +55,11 @@
                             </thead>
                             <tbody>
                                 <?php
-                                // [OPTIMASI] Mengambil semua data stok dengan satu kueri, bukan N+1 kueri.
                                 $i = 1;
-                                $sup_arr = array(); // Tetap digunakan untuk tabel riwayat
+                                $sup_arr = array();
                                 $supply_query = $conn->query("
                                     SELECT
-                                        s.id,
-                                        s.name,
+                                        s.id, s.name,
                                         COALESCE(SUM(CASE WHEN i.stock_type = 1 THEN i.qty ELSE 0 END), 0) as total_in,
                                         COALESCE(SUM(CASE WHEN i.stock_type = 2 THEN i.qty ELSE 0 END), 0) as total_out
                                     FROM
@@ -72,7 +72,7 @@
                                         s.name ASC
                                 ");
                                 while ($row = $supply_query->fetch_assoc()) :
-                                    $sup_arr[$row['id']] = $row['name']; // Simpan nama untuk tabel riwayat
+                                    $sup_arr[$row['id']] = $row['name'];
                                     $available = $row['total_in'] - $row['total_out'];
                                 ?>
                                     <tr>
@@ -90,7 +90,6 @@
             </div>
         </div>
 
-        <!-- Kolom Riwayat Stok -->
         <div class="col-lg-7 mb-4">
             <div class="card h-100">
                 <div class="card-header page-header">
@@ -120,7 +119,6 @@
                                         <td class="text-center"><?php echo $row['qty'] ?></td>
                                         <td class="text-center">
                                             <?php
-                                            // [DIUBAH] Menggunakan kelas badge Bootstrap 5
                                             if ($row['stock_type'] == 1) :
                                                 echo '<span class="badge bg-success">Masuk</span>';
                                             else :
@@ -147,10 +145,16 @@
 
 <script>
 $(document).ready(function() {
-    // [DIUBAH] Inisialisasi DataTable dengan opsi responsive
+    // Inisialisasi DataTable dengan opsi baru
     $('#inventory-history').dataTable({
         responsive: true,
-        "order": [] // Menonaktifkan pengurutan default
+        "order": [], // Menonaktifkan pengurutan default
+        language: {
+            paginate: {
+                previous: '<span aria-hidden="true">&laquo;</span>', // Simbol untuk "Previous"
+                next:     '<span aria-hidden="true">&raquo;</span>'  // Simbol untuk "Next"
+            }
+        }
     });
 
     // Event handlers (tidak ada perubahan)
@@ -158,7 +162,6 @@ $(document).ready(function() {
         uni_modal("Kelola Stok", "manage_inv.php");
     });
 
-    // Gunakan event delegation untuk tombol dinamis
     $('#inventory-history').on('click', '.edit_stock', function() {
         uni_modal("Kelola Stok", "manage_inv.php?id=" + $(this).attr('data-id'));
     });

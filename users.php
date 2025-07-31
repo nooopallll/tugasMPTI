@@ -1,8 +1,7 @@
 <?php include 'db_connect.php'; ?>
 
-<!-- [DIHAPUS] Tag <head> dan <style> dipindahkan ke file layout utama. -->
 <style>
-    /* Tambahkan style ini ke file CSS utama Anda jika belum ada */
+    /* Style yang sudah ada */
     .card.users-card {
         border: none;
         border-radius: 0.75rem;
@@ -17,6 +16,12 @@
     }
     .table thead th {
         background-color: #f8f9fc;
+    }
+
+    /* [BARU] Style untuk memposisikan pagination di tengah */
+    .dataTables_wrapper .dataTables_paginate {
+        justify-content: center !important;
+        padding-top: 1em; /* Memberi sedikit jarak dari tabel */
     }
 </style>
 
@@ -37,11 +42,9 @@
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
-                        <!-- [DIUBAH] Menambahkan ID dan style width untuk DataTables -->
                         <table class="table table-hover" id="user-list" style="width:100%">
                             <thead>
                                 <tr>
-                                    <!-- [BARU] Atribut data-priority untuk DataTables Responsive -->
                                     <th data-priority="3" class="text-center">#</th>
                                     <th data-priority="1">Nama</th>
                                     <th data-priority="2">Username</th>
@@ -60,7 +63,6 @@
                                     <td><?php echo $row['username'] ?></td>
                                     <td class="text-center">
                                         <div class="btn-group" role="group">
-                                            <!-- [DIUBAH] Tombol aksi menjadi ikon saja untuk tampilan lebih bersih -->
                                             <button class="btn btn-sm btn-outline-primary edit_user" type="button" data-id="<?php echo $row['id'] ?>" title="Edit Pengguna">
                                                 <i class="fas fa-edit"></i>
                                             </button>
@@ -82,16 +84,22 @@
 
 <script>
 $(document).ready(function() {
-    // [DIUBAH] Inisialisasi DataTable dengan opsi responsive
+    // [DIUBAH] Inisialisasi DataTable dengan opsi pagination baru
     var table = $('#user-list').DataTable({
-        responsive: true
+        responsive: true,
+        language: {
+            paginate: {
+                previous: '<span aria-hidden="true">&laquo;</span>', // Simbol untuk "Previous"
+                next:     '<span aria-hidden="true">&raquo;</span>'  // Simbol untuk "Next"
+            }
+        }
     });
 
     $('#new_user').click(function() {
         uni_modal('Tambah Pengguna Baru', 'manage_user.php');
     });
 
-    // [DIUBAH] Menggunakan event delegation agar tombol berfungsi di semua halaman tabel
+    // Menggunakan event delegation agar tombol berfungsi di semua halaman tabel
     $('#user-list tbody').on('click', '.edit_user', function() {
         uni_modal('Edit Pengguna', 'manage_user.php?id=' + $(this).data('id'));
     });
@@ -101,7 +109,6 @@ $(document).ready(function() {
     });
 });
 
-// Fungsi delete_user tetap sama
 function delete_user($id) {
     start_load();
     $.ajax({

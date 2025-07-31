@@ -30,6 +30,7 @@
     #topbar .dropdown-menu {
         position: absolute;
         z-index: 1050;
+        background-color: "red";
     }
 </style>
 
@@ -57,7 +58,7 @@
                         <li>
                             <a class="dropdown-item" href="ajax.php?action=logout">
                                 <i class="fa fa-power-off"></i>
-                                <span class="d-none d-sm-inline">Logout</span>
+                                <span class="d-sm-inline">Logout</span>
                             </a>
                         </li>
                     </ul>
